@@ -1,0 +1,63 @@
+from numpy import *
+import numpy as np
+from sklearn import linear_model
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+
+x_values = []
+y_values = []
+
+# Read data
+with open('1st Challenge.txt', "r") as filestream:
+    for line in filestream:
+        data = line.split(",")
+        x_values.append([float(data[0])])
+        y_values.append([float(data[1])])
+
+# Create a third variable in the daset
+z_values = []
+for i in range(len(x_values)):
+    newValue = random.random()
+    z_values.append(newValue)
+
+# Define our test data
+testN = int(0.2*len(x_values))
+x_test = array(x_values[-testN:])
+y_test = array(y_values[-testN:])
+z_test = array(z_values[-testN:])
+
+# Define our train data
+trainN = int(0.8*len(x_values))
+x_train = array(x_values[:trainN])
+y_train = array(y_values[:trainN])
+z_train = array(z_values[:trainN])
+
+# Train model on data
+body_reg = linear_model.LinearRegression()
+body_reg.fit(x_train, y_train)
+
+# Train model on new data
+body_reg1 = linear_model.LinearRegression()
+body_reg1.fit(x_train, z_train)
+
+# Predict on test data
+print(body_reg.predict(x_test))
+
+# The mean squared error
+print("Mean squared error: %.2f" % np.mean((body_reg.predict(x_test) - y_test) ** 2))
+
+# Explained variance score: 1 is perfect prediction
+print('Variance score: %.2f' % body_reg.score(x_test, y_test))
+print('Variance score: %.2f' % body_reg1.score(x_test, z_test))
+
+# Visualize results
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(x_train, y_train, z_train, c='r', marker='o')
+
+#plt.plot(x_train, body_reg.predict(x_train))
+ax.plot(x_train, body_reg.predict(x_train),body_reg1.predict(x_train))
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
+plt.show()
