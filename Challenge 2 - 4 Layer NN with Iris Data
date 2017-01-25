@@ -1,0 +1,74 @@
+import numpy as np
+np.set_printoptions(suppress=True)
+
+# sigmoid function
+def sigmoid(x, deriv=False):
+    if (deriv == True):
+        return x * (1 - x)
+    return 1 / (1 + np.exp(-x))
+
+x_values = []
+y_values = []
+
+with open('iris.txt', "r") as filestream:
+    for line in filestream:
+        data = line.split(",")
+        x_values.append([float(data[0]),float(data[1]),float(data[2]),float(data[3])])
+        y_values.append([int(data[4])])
+    inputs = np.array(x_values)
+    outputs = np.array(y_values)
+
+# seed random numbers to make calculation
+# deterministic (just a good practice)
+np.random.seed(1)
+
+# initialize weights randomly with mean 0
+weights_for_layer_one   = 2 * np.random.random((4, 150)) - 1
+weights_for_layer_two   = 2 * np.random.random((150, 150)) - 1
+weights_for_layer_three = 2 * np.random.random((150, 10)) - 1
+weights_for_layer_four  = 2 * np.random.random((10, 1)) - 1
+
+bias = 0.1
+
+for iteration in range(600000):
+    # forward propagation
+    original_inputs = inputs
+
+    outputs_of_layer_one   = sigmoid(np.dot(original_inputs, weights_for_layer_one))
+
+    outputs_of_layer_two   = sigmoid(np.dot(outputs_of_layer_one,weights_for_layer_two))
+
+    outputs_of_layer_three = sigmoid(np.dot(outputs_of_layer_two, weights_for_layer_three))
+
+    outputs_of_layer_four  = sigmoid(np.dot(outputs_of_layer_three, weights_for_layer_four))
+
+
+    # how much did we miss?
+    final_error = outputs - outputs_of_layer_four
+
+    if (iteration % 10000) == 0:
+        print("Error:" + str(np.mean(np.abs(final_error))))
+
+    # multiply how much we missed by the
+    # slope of the sigmoid at the values in l4
+    final_delta = final_error * sigmoid(outputs_of_layer_four, True)
+
+    # How much did each l3 value contribute to the l4 error and in what direction is the target l3?
+    layer3_error = final_delta.dot(weights_for_layer_four.T)
+    layer3_delta = layer3_error * sigmoid(outputs_of_layer_three, deriv=True)
+
+    # How much did each l2 value contribute to the l3 error and in what direction is the target l2?
+    layer2_error = layer3_delta.dot(weights_for_layer_three.T)
+    layer2_delta = layer2_error * sigmoid(outputs_of_layer_two, deriv=True)
+
+    # How much did each l1 value contribute to the l2 error and in what direction is the target l1?
+    layer1_error = layer2_delta.dot(weights_for_layer_two.T)
+    layer1_delta = layer1_error * sigmoid(outputs_of_layer_one, deriv=True)
+    # update weights
+    weights_for_layer_one   += bias * np.dot(original_inputs.T, layer1_delta)
+    weights_for_layer_two   += bias * np.dot(outputs_of_layer_one.T, layer2_delta)
+    weights_for_layer_three += bias * np.dot(outputs_of_layer_two.T, layer3_delta)
+    weights_for_layer_four  += bias * np.dot(outputs_of_layer_three.T, final_delta)
+
+print("Output After Training:")
+print("Error:" + str(np.mean(np.abs(final_error))))
